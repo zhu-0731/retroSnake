@@ -98,11 +98,10 @@ public:
 		settextstyle(90, 30, _T("Microsoft YaHei")); // 设置文字样式
 		setcolor(RGB(255, 0, 0)); // 设置文字颜色
 		RECT r1 = { 0, 0, BK_LEN, BK_WID };
-		//RECT r2 = { 0, 5*BLOCKWID, BK_LEN, BK_WID };
+
 		TCHAR text[] = _T("Pause...\nPress enter to continue");
 		drawtext(_T("Pause...\nPress enter to continue\n'q/Q' to exit"), &r1, DT_CENTER | DT_VCENTER | DT_WORDBREAK);
-		//drawtext(_T("Press enter to continue"), &r2, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-		//outtextxy(180, 240, text); // 在指定位置显示文字
+
 		FlushBatchDraw();
 	}
 	
@@ -111,19 +110,20 @@ public:
 class SNAKE_Stealth
 {
 	int times = 0;
-	int move_times=2;
+	int moving=0;
 public:
 	bool state = 1;
 	bool needMove()
 	{
-		if (move_times > 0)
+		int move_times = max(0, 3 - (snake.size() - 20) / 10);
+		if (moving <move_times)
 		{
-			move_times--;
+			moving++;
 			return 0;
 		}
 		else
 		{
-			move_times = max(0, 2 - (snake.size() - 45) / 10);
+			moving = 0;
 			return 1;
 		}
 	}
@@ -301,7 +301,7 @@ public:
 			}
 			genefood(n * i / BLOCKWID, n * i / BLOCKWID, (BK_LEN - n * i) / BLOCKWID, (BK_WID - n * j) / BLOCKWID, SPEED);
 		}
-		else if (n==0&&food_steal_location.x == snake[0].x&& food_steal_location.y == snake[0].y)
+		else if (n<2&&food_steal_location.x == snake[0].x&& food_steal_location.y == snake[0].y)
 		{
 			steal.state = 0;
 			food_steal_location.x = 0;
@@ -409,8 +409,7 @@ void DrawBG(int start_x, int start_y, int end_x, int end_y)
 		line(0, j, BK_LEN, j);
 	}
 	//侧边栏绘制
-	//setfillcolor(RGB(145, 156, 118));
-	//solidrectangle(BK_LEN, 0, BK_LEN + 15 * BLOCKWID, BK_WID);
+
 	IMAGE Card;
 	loadimage(&Card, _T("card.png"));
 	putimage(BK_LEN, 0, &Card);
@@ -453,10 +452,8 @@ void DrawSnake(void)
 
 	for (int i = 1; i < snake.size(); i++)
 	{
-		//getimage(&Body, 0, 0, BLOCKWID, BLOCKWID);
 		putimage(snake.at(i).x * BLOCKWID, snake.at(i).y * BLOCKWID, &Body);
 	}
-	//getimage(&Head, 0, 0, BLOCKWID, BLOCKWID);
 	putimage(snake.at(0).x * BLOCKWID, snake.at(0).y * BLOCKWID, &Head);
 
 #ifdef DEBUG
@@ -542,11 +539,11 @@ void BKjudge(int& n, const int i, const int j)
 		foods.genefood(n * i / BLOCKWID, n * i / BLOCKWID, (BK_LEN - n * i) / BLOCKWID, (BK_WID - n * j) / BLOCKWID, BAD);
 	if (con.increase && (snake.size() % 6==0))
 		foods.genefood(n * i / BLOCKWID, n * i / BLOCKWID, (BK_LEN - n * i) / BLOCKWID, (BK_WID - n * j) / BLOCKWID, GOOD);
-	//cout << 1111111 << endl;
+
 	if (con.increase && n > 0 && (snake.size() == 20||snake.size() == 45))
 	{
 		n--;
-		//cout << 2222222 << endl;
+
 	}
 }
 
@@ -618,17 +615,11 @@ int  move_judge(void)
 			dr.dr_mem = dr.direc;
 			cout << "已暂停，按回车继续" << endl;
 			ui.print_pause();
-			/*cleardevice();
-			DrawBG(n * i, n * i, BK_LEN - n * i, BK_WID - n * j);
-			DrawSnake();*/
+
 			cin.clear();
 			cin.ignore(1000, '\n');
 			cin.clear();
-			//_getch();
-			//Sleep(300);
-			//cout << "pause" << endl;
-			//continue;
-			//direc = dr_mem;
+
 			return 0;
 		}
 		else if (temdirec != dr.oppo_direc&&(temp_tolower==RIGHT||
@@ -693,7 +684,7 @@ int main()
 			break;
 
 		Automove(dr.direc,n,i,j);
-		if (n == 0&&steal.needMove())
+		if (n <2&&steal.needMove())
 		{
 			foods.stealFoodMove();
 		}
@@ -711,7 +702,7 @@ int main()
 			steal.stealth();
 		}
 		foods.draw_food();
-		
+		//死亡判断模组
 		if (diedJudge(n * logic_i, n * logic_i, BK_LEN / BLOCKWID - n * logic_i, BK_WID / BLOCKWID - n * logic_j) == -1)
 		{
 			Sleep(300);
@@ -727,11 +718,11 @@ int main()
 			break;
 		}
 
+		//控制速度
 		Sleep(ti.sleep_t);
 		if (ti.sleep_t >= 150)
 			ti.sleep_t = 300 - (snake.size() - 9) * 10;
-		//cout << n<<endl;
-		cin.clear();
+
 		FlushBatchDraw();
 	}
 	EndBatchDraw();
